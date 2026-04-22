@@ -1,0 +1,391 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"disabled_providers": ["openrouter", "xai"],
+	"share": "disabled",
+	"model": "ollama/gemma4:e2b",
+	"small_model": "ollama/gemma4:e2b",
+	"provider": {
+		"ollama": {
+			"npm": "@ai-sdk/openai-compatible",
+			"name": "Ollama (local)",
+			"options": {
+				"baseURL": "http://127.0.0.1:11434/v1"
+			},
+			"models": {
+				"gemma4:e2b": {
+					"name": "Gemma 4 E2B (local)"
+				}
+			}
+		}
+	},
+	"compaction": {
+		"auto": true,
+		"prune": true,
+		"reserved": 15000
+	},
+	"permission": {
+		"edit": "ask",
+		"bash": {
+			"rm -rf *": "deny",
+			"rm -r *": "deny",
+			"git push --force*": "deny",
+			"git reset --hard*": "deny",
+			"git clean -fd*": "deny",
+			"chmod -R *": "deny",
+			"DROP *": "deny",
+			"drop *": "deny",
+			"*": "ask"
+		}
+	},
+	"default_agent": "standard",
+	"agent": {
+		"standard": {
+			"description": "Standard orchestrator — delegation-only; converses/plans and delegates execution to standard-* specialists.",
+			"mode": "primary",
+			"prompt": "{file:agents/standard/standard.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny",
+				"question": "allow",
+				"task": {
+					"*": "deny",
+					"standard-*": "allow",
+					"explore": "allow",
+					"code-reviewer": "allow",
+					"security-auditor": "allow",
+					"performance-analyzer": "allow"
+				}
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": true
+			}
+		},
+		"auto": {
+			"description": "Auto-lane orchestrator — delegation-only; requires planning, open Q&A, and explicit user approval before writable delegation to auto-* specialists.",
+			"mode": "primary",
+			"prompt": "{file:agents/auto/auto.md}",
+			"permission": {
+				"edit": "deny",
+				"question": "allow",
+				"bash": "deny",
+				"task": {
+					"*": "deny",
+					"auto-*": "allow",
+					"explore": "allow",
+					"code-reviewer": "allow",
+					"security-auditor": "allow",
+					"performance-analyzer": "allow"
+				}
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": true
+			}
+		},
+		"plan": {
+			"disable": true
+		},
+		"build": {
+			"disable": true
+		},
+		"standard-plan": {
+			"description": "Standard planning subagent — produces a structured plan and asks clarifying questions when needed.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/standard/plan.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny",
+				"question": "allow",
+				"task": {
+					"*": "deny",
+					"explore": "allow"
+				}
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"auto-plan": {
+			"description": "Auto planning subagent — produces a structured plan, surfaces open questions, and prepares an approval-ready handoff.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/auto/plan.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny",
+				"question": "allow",
+				"task": {
+					"*": "deny",
+					"explore": "allow"
+				}
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"standard-build": {
+			"description": "Standard implementation subagent — executes an approved plan with confirmation-gated command behavior.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/standard/build.md}",
+			"permission": {
+				"edit": "allow",
+				"bash": "ask",
+				"question": "allow",
+				"task": {
+					"*": "deny",
+					"code-reviewer": "allow",
+					"security-auditor": "allow"
+				}
+			},
+			"tools": {
+				"bash": true,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"auto-build": {
+			"description": "Auto implementation subagent — executes only approved plans with minimum-change edits and touched-scope validation.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/auto/build.md}",
+			"permission": {
+				"edit": "allow",
+				"question": "allow",
+				"bash": {
+					"rm *": "ask",
+					"rm -rf *": "deny",
+					"rm -r *": "deny",
+					"git push --force*": "deny",
+					"git push*": "ask",
+					"git reset --hard*": "deny",
+					"git clean -fd*": "deny",
+					"git branch -d *": "ask",
+					"git branch -D *": "deny",
+					"chmod -R *": "deny",
+					"DROP *": "deny",
+					"drop *": "deny",
+					"docker push*": "ask",
+					"npm publish*": "deny",
+					"*": "ask"
+				},
+				"task": {
+					"*": "deny",
+					"code-reviewer": "allow",
+					"security-auditor": "allow"
+				}
+			},
+			"tools": {
+				"bash": true,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"explore": {
+			"description": "Use for fast codebase search and exploration — finding files by pattern, locating code by keyword, answering structural questions. Use before planning or implementing to orient quickly without consuming heavy context.",
+			"mode": "subagent",
+			"hidden": true,
+			"permission": {
+				"edit": "deny",
+				"bash": "deny"
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"code-reviewer": {
+			"description": "Use after completing a non-trivial implementation block to review for correctness, conventions, security surface, and test coverage gaps. Returns structured findings — Critical, Suggestion, Nit.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/code-reviewer.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny"
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"standard-docs-writer": {
+			"description": "Standard docs writer subagent — updates docs only with confirmation-gated execution.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/standard/docs-writer.md}",
+			"permission": {
+				"edit": "allow",
+				"bash": "deny",
+				"question": "allow"
+			},
+			"tools": {
+				"bash": false,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"auto-docs-writer": {
+			"description": "Auto docs writer subagent — updates docs only after plan approval within the auto lane.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/auto/docs-writer.md}",
+			"permission": {
+				"edit": "allow",
+				"bash": "deny",
+				"question": "allow"
+			},
+			"tools": {
+				"bash": false,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"security-auditor": {
+			"description": "Use when a task touches auth, secrets, API contracts, or input validation. Reviews for vulnerabilities and returns prioritized findings — High, Medium, Low. No code changes.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/security-auditor.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny"
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"performance-analyzer": {
+			"description": "Use when a task involves performance, bundle size, query efficiency, or rendering optimization. Identifies bottlenecks with evidence and returns prioritized findings. No code changes.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/performance-analyzer.md}",
+			"permission": {
+				"edit": "deny",
+				"bash": "deny"
+			},
+			"tools": {
+				"bash": false,
+				"write": false,
+				"edit": false,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"standard-devops": {
+			"description": "Standard DevOps subagent — handles Helm, Docker, and CI/CD with confirmation-gated execution.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/standard/devops.md}",
+			"permission": {
+				"edit": "allow",
+				"bash": "ask",
+				"question": "allow"
+			},
+			"tools": {
+				"bash": true,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		},
+		"auto-devops": {
+			"description": "Auto DevOps subagent — handles Helm, Docker, and CI/CD after plan approval while preserving risk gates.",
+			"mode": "subagent",
+			"hidden": true,
+			"prompt": "{file:agents/auto/devops.md}",
+			"permission": {
+				"edit": "allow",
+				"question": "allow",
+				"bash": {
+					"rm -rf *": "deny",
+					"git push --force*": "deny",
+					"git push*": "ask",
+					"git reset --hard*": "deny",
+					"git clean -fd*": "deny",
+					"chmod -R *": "deny",
+					"DROP *": "deny",
+					"drop *": "deny",
+					"docker push*": "ask",
+					"npm publish*": "deny",
+					"kubectl apply*": "ask",
+					"kubectl delete*": "ask",
+					"helm upgrade*": "ask",
+					"helm install*": "ask",
+					"helm uninstall*": "ask",
+					"terraform apply*": "ask",
+					"terraform destroy*": "deny",
+					"*": "ask"
+				}
+			},
+			"tools": {
+				"bash": true,
+				"write": true,
+				"edit": true,
+				"read": true,
+				"grep": true,
+				"glob": true,
+				"webfetch": false
+			}
+		}
+	}
+}
