@@ -17,7 +17,7 @@ Initialize this repository for the OpenCode workflow.
 - RUNBOOK.md (validated commands and procedures)
 - .opencode/skills/ (add/update skill folders for this repository)
 - .opencode/opencode.json alignment (agent prompts, permissions, default `general` agent)
-- lane policy alignment: `general` is read-only routing with only read-only bash/status automatic; `standard` and `auto` plan directly but do not edit; executable work goes to `standard-executor` or `auto-executor`, with automatic validation only in `auto-executor`
+- lane policy alignment: `general` is the default safe standalone executable agent for local code/docs/config/tests/validation work; `standard` and `auto` remain explicit optional lanes that plan directly but do not edit; lane executable work goes to `standard-executor` or `auto-executor`, with automatic validation in `general` and `auto-executor`
 
 3) Enforce risk gates for:
 - security/auth and secrets

@@ -2,7 +2,7 @@
 
 A reusable **OpenCode orchestration baseline** you can copy into any repository.
 
-It provides a default read-only `general` agent plus two planning/conversation primaries (`standard` and `auto`) that delegate executable work to lane executors, plus a bootstrap path that generates repo-specific docs.
+It provides a default safe standalone `general` agent, optional explicit `standard` and `auto` lanes that delegate executable work to lane executors, plus a bootstrap path that generates repo-specific docs.
 
 ## What this repo includes
 
@@ -20,13 +20,13 @@ It provides a default read-only `general` agent plus two planning/conversation p
 
 ## Lane model (core workflow)
 
-Both lanes are **delegation-first**: primary agents plan and converse only. They do not directly edit files, validate, or run state-changing commands; they route execution to executor subagents.
+Default usage starts with `general`, which can answer, explore, plan, edit/write local files, and validate directly. `standard` and `auto` remain **delegation-first** optional lanes: their primaries plan and converse only, then route execution to executor subagents.
 
 ### `general` default
 
-- Read-only Q&A, exploration, triage, and routing
-- No direct edit/write; bash is limited to configured read-only/status commands, with no writable delegation
-- Suggests `standard` or `auto` for implementation requests
+- Q&A, exploration, planning, local code/docs/config edits, writing, tests, and validation
+- Direct local implementation for normal safe work; for non-trivial/risky/ambiguous work, explain plan/assumptions and ask before proceeding
+- May suggest `standard` or `auto` as optional explicit lanes, but does not require routing for normal work
 
 ### `standard` lane
 
@@ -41,25 +41,29 @@ Both lanes are **delegation-first**: primary agents plan and converse only. They
 - Uses safe local validation/status commands without asking where configured
 - Stops for shared infra/deploy/publish/push/terraform/cluster mutations and routes to standard confirmation
 
-## Delegation flow (non-trivial task)
+## Default flow (non-trivial task)
 
 Typical flow is:
 
-1. Primary agent inspects context directly, optionally using `explore`
-2. Primary agent produces and displays a risk-tiered execution plan
+1. `general` inspects context directly, optionally using read-only `explore`
+2. `general` produces and displays a risk-tiered plan/assumptions when work is non-trivial, risky, or ambiguous
 3. User accepts the plan when required
-4. Executor (`standard-executor` or `auto-executor`) performs scoped code/docs/config/tests/local operations/validation work
+4. `general` performs scoped code/docs/config/tests/local operations/validation work directly
+
+If the user explicitly chooses `standard` or `auto`, that lane's executor (`standard-executor` or `auto-executor`) performs the scoped implementation after the lane's required planning/acceptance.
 
 Docs-writing and local operations responsibilities are merged into executors. Code review, security audit, and performance analysis are not automatic default workflow steps; the optional specialists can be tagged explicitly for manual findings-only review.
 
 ## Permission and safety model (high level)
 
-- Primary agents (`general`, `standard`, `auto`) are configured as orchestration-only or read-only: no direct write/edit execution, with automatic bash limited to configured read-only exploration/status patterns.
+- `general` is configured for safe standalone local execution, including write/edit tools and focused validation allowlists.
+- `standard` and `auto` primaries are configured as planning-only: no direct write/edit execution, with automatic bash limited to configured read-only exploration/status patterns and explicit read-only compound status combos.
 - Primary `standard` and `auto` agents assign risk tiers before implementation.
 - `standard` is confirmation-oriented; `auto` may proceed for clear Tier 1/Tier 2 local reversible edits.
-- Validation bash is automatic only for `auto-executor`; `standard-executor`, primaries, and explore do not get automatic test/lint/build/typecheck commands.
+- Validation bash is automatic only for `general` and `auto-executor`; `standard-executor`, planning primaries, and explore do not get automatic test/lint/build/typecheck commands.
 - Optional manual specialists are read-only/findings-only and are not wired into primary default delegation paths.
-- Write/command execution happens in subagents with scoped permissions, with fallback ask for commands not explicitly allowed or denied.
+- Write/command execution happens in `general` or in explicit lane subagents with scoped permissions, with fallback ask for commands not explicitly allowed or denied.
+- Broad compound, pipe, redirection, command substitution, `xargs`, and `tee` shell forms remain ask-gated unless a specific harmless read-only status combo is allowlisted before the broad guard.
 - Baseline command guardrails in `.opencode/opencode.json` deny clearly dangerous operations (for example force-reset or recursive destructive deletes).
 - Both lanes enforce stop-and-confirm for high-risk changes such as:
   - security/auth model changes
@@ -88,9 +92,9 @@ Docs-writing and local operations responsibilities are merged into executors. Co
    - `.opencode/skills/` (add/remove skills relevant to the repo)
 3. Keep `AGENTS.md` mostly portable and policy-focused.
 4. Adjust `.opencode/opencode.json`:
-   - keep `default_agent` as `general`; the verifier expects this default, so switch lanes explicitly instead of changing it
+   - keep `default_agent` as `general`; the verifier expects this standalone default, so switch lanes explicitly only when desired
    - tune permission rules for your environment
-   - keep delegation boundaries intact unless you intentionally want direct execution in primaries
+   - keep delegation boundaries intact; `general` executes directly, while `standard`/`auto` delegate to their executors
 5. Reload/restart OpenCode so agent/skill config is re-read.
 6. Run `python3 verify-opencode-setup.py` to confirm setup integrity.
 

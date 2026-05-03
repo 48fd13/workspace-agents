@@ -19,9 +19,9 @@ Create or update these files:
 Also verify `.opencode/opencode.json`:
 
 - All referenced agent prompt files exist.
-- `default_agent` is `general`; the verifier expects this default, so users should switch lanes explicitly instead of changing it.
+- `default_agent` is standalone `general`; the verifier expects this default, so users should switch lanes explicitly only when desired.
 - Permission guardrails include destructive-operation denies.
-- Required active agents include `general`, `standard`, `auto`, `standard-executor`, and `auto-executor`, with `explore` available as a read-only helper.
+- Required active agents include standalone `general`, optional lane primaries `standard`/`auto`, and lane executors `standard-executor`/`auto-executor`, with `explore` available as a read-only helper.
 
 ## Execution workflow
 
