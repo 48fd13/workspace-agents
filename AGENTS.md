@@ -19,17 +19,21 @@ If instructions conflict, follow the highest priority and call out the conflict.
 
 ## Lane Model
 
-- `standard` lane: confirmation-oriented for non-trivial choices.
-- `auto` lane: delegation-first orchestration with mandatory planning, open Q&A, and explicit approval before writable delegation.
-- In both lanes, primary orchestrators should remain orchestration-only and delegate executable work to specialists.
+- `general`: default read-only Q&A, exploration, triage, and routing. It does not edit or delegate writable work; only configured read-only bash/status commands are automatic.
+- `standard` lane: confirmation-oriented primary that plans directly and delegates approved executable work to `standard-executor`.
+- `auto` lane: primary that plans directly and delegates eligible Tier 1/Tier 2 local reversible scoped work to `auto-executor`.
+- Primary agents remain conversation/planning-only and do not edit, write, validate, or run state-changing commands directly.
+- Executors handle code, docs, config, tests, local operations, and validation within their lane's gates.
+- Optional manual specialists (`code-reviewer`, `security-auditor`, `performance-analyzer`) may be tagged explicitly by the user for read-only findings-only analysis; they are not part of the default automatic flow.
 
 ## Default Delivery Flow (Non-Trivial Work)
 
-1. Explore current code and context.
-2. Produce an execution plan.
-3. Implement via the appropriate build specialist.
-4. Run review and consistency checks when relevant.
-5. Validate with the smallest useful set of build/lint/test commands.
+1. Explore current code and context as needed.
+2. The primary (`standard` or `auto`) produces a risk-tiered execution plan directly.
+3. After required approval, execute via `standard-executor` or `auto-executor` as appropriate.
+4. Validate with the smallest useful set of build/lint/test commands.
+
+Optional specialist review/security/performance analysis is manual-only and runs only on explicit user request.
 
 Use judgment for read-only trivial tasks and skip unnecessary steps.
 
@@ -40,8 +44,9 @@ Use judgment for read-only trivial tasks and skip unnecessary steps.
 - Data-loss risk (destructive/irreversible operations)
 - External API contract breaks
 - Shared infrastructure changes outside local/dev scope
+- Deploy, publish, push, cluster, or terraform mutations
 
-Proceed autonomously for low-risk details that do not change agreed behavior.
+Proceed autonomously only in the auto lane for clear Tier 1/Tier 2 local reversible scoped work that does not change agreed behavior.
 
 ## Done Criteria
 
@@ -54,6 +59,8 @@ Proceed autonomously for low-risk details that do not change agreed behavior.
 ## Command Policy
 
 - Prefer repository-local scripts and workspace tooling.
+- Read-only exploration/status bash is broadly allowed where configured; validation bash is automatic only for `auto-executor`.
+- `standard-executor` asks before validation or non-read bash; everything not explicitly allowed or denied is ask-gated.
 - Run the smallest relevant verification set before handoff.
 - Avoid destructive commands unless explicitly required and confirmed.
 

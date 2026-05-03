@@ -13,6 +13,8 @@ This file is repository-specific and should be generated/updated during bootstra
 ## Quality Checks
 
 - Add lint/format/test/build commands for touched scope.
+- Validate OpenCode setup with `python3 verify-opencode-setup.py` from the repository root.
+- In OpenCode permissions, automatic validation commands are allowlisted only for `auto-executor`; standard validation remains confirmation-gated through `standard-executor`.
 
 ## Release / Deploy
 

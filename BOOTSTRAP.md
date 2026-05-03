@@ -16,14 +16,15 @@ Initialize this repository for the OpenCode workflow.
 - ARCHITECTURE.md (repo map and key flows)
 - RUNBOOK.md (validated commands and procedures)
 - .opencode/skills/ (add/update skill folders for this repository)
-- .opencode/opencode.json alignment (agent prompts, permissions, default lane)
-- lane policy alignment: both lanes require planning + open Q&A + explicit approval before writable delegation
+- .opencode/opencode.json alignment (agent prompts, permissions, default `general` agent)
+- lane policy alignment: `general` is read-only routing with only read-only bash/status automatic; `standard` and `auto` plan directly but do not edit; executable work goes to `standard-executor` or `auto-executor`, with automatic validation only in `auto-executor`
 
 3) Enforce risk gates for:
 - security/auth and secrets
 - billing/payments/funds flow
 - destructive or irreversible operations
 - external API contract breaks
+- shared/prod infra, deploy, publish, push, cluster, or terraform mutations
 
 4) Report back:
 - inferred vs assumed items
