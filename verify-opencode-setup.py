@@ -25,6 +25,10 @@ OPTIONAL_MANUAL_SPECIALISTS = [
 
 PLANNING_ONLY_PRIMARY_AGENTS = ["standard", "auto"]
 
+WEBFETCH_ENABLED_AGENTS = ["general", "standard", "auto", "explore"]
+
+WEBFETCH_DISABLED_AGENTS = ["standard-executor", "auto-executor"]
+
 VALIDATION_BASH_PATTERNS = [
     "npm test*",
     "npm run test*",
@@ -104,8 +108,14 @@ REQUIRED_READ_ONLY_PATTERNS = [
     "wc *",
     "file *",
     "stat *",
+    "du -sh *",
+    "tree *",
+    "git status",
+    "git status *",
     "git status*",
     "git status --*",
+    "git diff",
+    "git diff *",
     "git diff*",
     "git diff --*",
     "git diff -- *",
@@ -116,16 +126,35 @@ REQUIRED_READ_ONLY_PATTERNS = [
     "git diff --name-only*",
     "git diff --name-status*",
     "git diff --compact-summary*",
+    "git log",
+    "git log *",
     "git log*",
     "git log --*",
+    "git show",
+    "git show *",
     "git show*",
     "git show --*",
+    "git branch",
+    "git branch *",
     "git branch*",
     "git branch --show-current",
     "git ls-files*",
     "git grep*",
+    "git rev-parse *",
     "git rev-parse*",
     "git remote -v*",
+]
+
+REQUIRED_VERSION_PATTERNS = [
+    "node --version",
+    "npm --version",
+    "python --version",
+    "python3 --version",
+    "go version",
+    "rustc --version",
+    "cargo --version",
+    "docker --version",
+    "kubectl version --client*",
 ]
 
 REQUIRED_SAFE_COMPOUND_PATTERNS = [
@@ -170,6 +199,23 @@ REQUIRED_DANGEROUS_GIT_DENY_PATTERNS = [
     "git branch -D*",
 ]
 
+REQUIRED_DESTRUCTIVE_DENY_PATTERNS = [
+    "rm -rf *",
+    "rm -r *",
+    "sudo rm*",
+    "find * -delete*",
+    "find * -exec rm*",
+    "chmod -R *",
+    "chown -R *",
+    "dd *",
+    "mkfs*",
+    "terraform destroy*",
+    "kubectl delete*",
+    "helm uninstall*",
+    "docker system prune*",
+    "docker volume rm*",
+]
+
 REQUIRED_MUTATING_GIT_ASK_PATTERNS = [
     "git push*",
     "git add*",
@@ -187,6 +233,36 @@ REQUIRED_MUTATING_GIT_ASK_PATTERNS = [
     "git submodule*",
 ]
 
+REQUIRED_INSTALL_NETWORK_INFRA_ASK_PATTERNS = [
+    "npm install*",
+    "pnpm install*",
+    "yarn install*",
+    "bun install*",
+    "pip install*",
+    "brew install*",
+    "apt install*",
+    "sudo apt*",
+    "curl *",
+    "wget *",
+    "ssh *",
+    "scp *",
+    "rsync *",
+    "docker *",
+    "docker compose *",
+    "kubectl *",
+    "helm *",
+    "terraform *",
+]
+
+REQUIRED_FILE_MUTATION_ASK_PATTERNS = [
+    "mkdir *",
+    "touch *",
+    "mv *",
+    "cp *",
+    "chmod *",
+    "chown *",
+]
+
 BROAD_SHELL_ASK_GUARDS = REQUIRED_SHELL_ASK_GUARDS
 
 COMPOUND_ASK_GUARDS = ["*&&*", "*;*"]
@@ -194,6 +270,9 @@ COMPOUND_ASK_GUARDS = ["*&&*", "*;*"]
 DISALLOWED_BLANKET_ALLOW_PATTERNS = [
     "*",
     "git *",
+    "docker *",
+    "npm *",
+    "sudo *",
     "*&&*",
     "*;*",
     "*|*",
@@ -317,8 +396,8 @@ def main() -> int:
             for tool_name in ["write", "edit", "bash", "read", "grep", "glob"]:
                 if general_tools.get(tool_name) is not True:
                     errors.append(f"general tool must be enabled: {tool_name}")
-            if general_tools.get("webfetch") is not False:
-                errors.append("general tool must be disabled: webfetch")
+            if general_tools.get("webfetch") is not True:
+                errors.append("general tool must be enabled: webfetch")
             general_bash = bash_permission(general_config)
             for pattern in VALIDATION_BASH_PATTERNS:
                 if general_bash.get(pattern) != "allow":
@@ -340,11 +419,19 @@ def main() -> int:
                     errors.append(f"{primary_agent} must deny direct edit permission")
                 if not isinstance(permission.get("bash"), dict):
                     errors.append(f"{primary_agent} must use a bash permission map")
-                for tool_name in ["write", "edit", "webfetch"]:
+                for tool_name in ["write", "edit"]:
                     if tools.get(tool_name) is not False:
                         errors.append(f"{primary_agent} tool must be disabled: {tool_name}")
                 if tools.get("bash") is not True:
                     errors.append(f"{primary_agent} bash tool must be enabled for read-only commands")
+            for agent_name in WEBFETCH_ENABLED_AGENTS:
+                tools = agents.get(agent_name, {}).get("tools", {})
+                if tools.get("webfetch") is not True:
+                    errors.append(f"{agent_name} tool must be enabled: webfetch")
+            for agent_name in WEBFETCH_DISABLED_AGENTS:
+                tools = agents.get(agent_name, {}).get("tools", {})
+                if tools.get("webfetch") is not False:
+                    errors.append(f"{agent_name} tool must be disabled: webfetch")
             bash_targets = [("global/default", config.get("permission", {}).get("bash", {}))]
             bash_targets.extend(
                 (agent_name, bash_permission(agents.get(agent_name, {})))
@@ -365,18 +452,29 @@ def main() -> int:
                 fallback_index = key_index(bash, "*")
                 if fallback_index is None:
                     errors.append(f"{agent_name} bash fallback must be present")
+                elif fallback_index != 0:
+                    errors.append(f"{agent_name} bash fallback ask must be the first rule")
                 for pattern in DISALLOWED_BLANKET_ALLOW_PATTERNS:
                     if bash.get(pattern) == "allow":
                         errors.append(f"{agent_name} must not broadly allow bash pattern: {pattern}")
                 for pattern in REQUIRED_SHELL_ASK_GUARDS:
                     if bash.get(pattern) != "ask":
                         errors.append(f"{agent_name} must ask-gate bash pattern: {pattern}")
+                for pattern in REQUIRED_INSTALL_NETWORK_INFRA_ASK_PATTERNS:
+                    if bash.get(pattern) != "ask":
+                        errors.append(f"{agent_name} must ask-gate install/network/infra pattern: {pattern}")
+                for pattern in REQUIRED_FILE_MUTATION_ASK_PATTERNS:
+                    if bash.get(pattern) != "ask":
+                        errors.append(f"{agent_name} must ask-gate file mutation pattern: {pattern}")
                 for pattern in REQUIRED_UNSAFE_GIT_ASK_PATTERNS:
                     if bash.get(pattern) != "ask":
                         errors.append(f"{agent_name} must ask-gate unsafe git pattern: {pattern}")
                 for pattern in REQUIRED_DANGEROUS_GIT_DENY_PATTERNS:
                     if bash.get(pattern) != "deny":
                         errors.append(f"{agent_name} must deny dangerous git pattern: {pattern}")
+                for pattern in REQUIRED_DESTRUCTIVE_DENY_PATTERNS:
+                    if bash.get(pattern) != "deny":
+                        errors.append(f"{agent_name} must deny destructive pattern: {pattern}")
                 for pattern in REQUIRED_MUTATING_GIT_ASK_PATTERNS:
                     if bash.get(pattern) != "ask":
                         errors.append(f"{agent_name} must ask-gate mutating git pattern: {pattern}")
@@ -387,10 +485,22 @@ def main() -> int:
                     if (
                         fallback_index is not None
                         and allow_index is not None
-                        and fallback_index < allow_index
+                        and fallback_index > allow_index
                     ):
                         errors.append(
-                            f"{agent_name} must place fallback ask after read-only allow: {pattern}"
+                            f"{agent_name} must place fallback ask before read-only allow: {pattern}"
+                        )
+                for pattern in REQUIRED_VERSION_PATTERNS:
+                    if bash.get(pattern) != "allow":
+                        errors.append(f"{agent_name} must allow harmless version pattern: {pattern}")
+                    allow_index = key_index(bash, pattern)
+                    if (
+                        fallback_index is not None
+                        and allow_index is not None
+                        and fallback_index > allow_index
+                    ):
+                        errors.append(
+                            f"{agent_name} must place fallback ask before version allow: {pattern}"
                         )
                 for pattern in REQUIRED_SAFE_COMPOUND_PATTERNS:
                     if bash.get(pattern) != "allow":
@@ -401,17 +511,16 @@ def main() -> int:
                     if (
                         fallback_index is not None
                         and allow_index is not None
-                        and fallback_index < allow_index
+                        and fallback_index > allow_index
                     ):
                         errors.append(
-                            f"{agent_name} must place fallback ask after safe compound allow: {pattern}"
+                            f"{agent_name} must place fallback ask before safe compound allow: {pattern}"
                         )
                 for guard in BROAD_SHELL_ASK_GUARDS:
                     guard_index = key_index(bash, guard)
-                    guarded_allow_patterns = (
-                        [pattern for pattern in REQUIRED_READ_ONLY_PATTERNS if pattern.startswith("git ")]
-                        + REQUIRED_SAFE_COMPOUND_PATTERNS
-                    )
+                    guarded_allow_patterns = [
+                        pattern for pattern in REQUIRED_READ_ONLY_PATTERNS if pattern.startswith("git ")
+                    ]
                     for pattern in guarded_allow_patterns:
                         allow_index = key_index(bash, pattern)
                         if (
@@ -439,10 +548,10 @@ def main() -> int:
                     if (
                         unsafe_index is not None
                         and broad_index is not None
-                        and unsafe_index > broad_index
+                        and unsafe_index < broad_index
                     ):
                         errors.append(
-                            f"{agent_name} must place {unsafe_pattern} before broad git allow {broad_pattern}"
+                            f"{agent_name} must place {unsafe_pattern} after broad git allow {broad_pattern}"
                         )
                 for guard in COMPOUND_ASK_GUARDS:
                     guard_index = key_index(bash, guard)
@@ -451,10 +560,10 @@ def main() -> int:
                         if (
                             guard_index is not None
                             and allow_index is not None
-                            and guard_index < allow_index
+                            and guard_index > allow_index
                         ):
                             errors.append(
-                                f"{agent_name} must allow {pattern} before broad compound guard {guard}"
+                                f"{agent_name} must place broad compound guard {guard} before explicit safe compound {pattern}"
                             )
                 git_grep_allow_index = key_index(bash, "git grep*")
                 for pattern in [
@@ -467,10 +576,10 @@ def main() -> int:
                     if (
                         guard_index is not None
                         and git_grep_allow_index is not None
-                        and guard_index > git_grep_allow_index
+                        and guard_index < git_grep_allow_index
                     ):
                         errors.append(
-                            f"{agent_name} must ask-gate {pattern} before allowing git grep*"
+                            f"{agent_name} must ask-gate {pattern} after allowing git grep*"
                         )
                 for pattern in UNSAFE_READ_ONLY_ALLOW_PATTERNS:
                     if bash.get(pattern) == "allow":
@@ -508,14 +617,15 @@ def main() -> int:
             auto_executor_bash = bash_permission(agents.get("auto-executor", {}))
             if auto_executor_bash.get("*") != "ask":
                 errors.append("auto-executor bash fallback must be ask")
-            for pattern in VALIDATION_BASH_PATTERNS:
-                if auto_executor_bash.get(pattern) != "allow":
-                    errors.append(f"auto-executor must allow validation pattern: {pattern}")
+            for executor_name in ["standard-executor", "auto-executor"]:
+                executor_bash = bash_permission(agents.get(executor_name, {}))
+                for pattern in VALIDATION_BASH_PATTERNS:
+                    if executor_bash.get(pattern) != "allow":
+                        errors.append(f"{executor_name} must allow validation pattern: {pattern}")
             validation_disallowed_agents = [
                 "standard",
                 "auto",
                 "explore",
-                "standard-executor",
             ]
             for agent_name in validation_disallowed_agents:
                 bash = bash_permission(agents.get(agent_name, {}))
