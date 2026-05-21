@@ -1,4 +1,4 @@
-## Agent Guide
+## Folder Workflow Kit Agent Guide
 
 ## Precedence
 
@@ -10,40 +10,38 @@ If instructions conflict, follow the highest priority and call out the conflict.
 
 ## Core Principles
 
-- Keep the default `general` agent safely executable for local work; keep `standard` and `auto` as explicit optional planning lanes.
+- This repository is the reusable OpenCode/Claude folder-workflow kit.
+- The daily machine-level router is `/Users/spider/workspace/_workspace/`, not this repo.
+- Use kit docs, templates, scripts, and skills as the control surfaces when maintaining this repo.
+- Keep one active executable agent: `general`.
+- Do not route normal work through agent lanes, executors, or specialist agents.
 - Execute non-trivial or risky work only after explaining the plan/assumptions and receiving required confirmation.
 - Make the smallest change that satisfies the request.
 - Follow repository conventions and existing patterns.
 - Surface assumptions and trade-offs explicitly.
 - If docs and code differ, trust code and report the mismatch.
 
-## Lane Model
+## Kit Layout
 
-- `general`: default safe standalone agent for Q&A, exploration, planning, local code/docs/config edits, writing, tests, and validation. It executes normal local work directly within safety gates and may use `explore` for read-only search-heavy orientation.
-- `standard`: primary conversational/planning lane. It plans directly with the user and delegates approved executable work to `standard-executor`.
-- `auto`: primary conversational/planning lane. It plans directly with the user and delegates eligible work to `auto-executor` under the rules below.
-- `standard` and `auto` remain explicit optional lanes; use them only when the user chooses that workflow.
-- Executors handle lane-specific code, docs, config, tests, local operations, and validation within risk gates.
-- Optional manual specialists (`code-reviewer`, `security-auditor`, `performance-analyzer`) may be tagged explicitly by the user for read-only, findings-only analysis. They are not automatic and are not part of the default delivery flow.
+- `docs/`: framework concepts, template selection, kit maintenance, migration notes.
+- `templates/`: copyable project/vault workspaces and artifact templates.
+- `scripts/`: workspace initialization and verification utilities.
+- `.opencode/AGENTS.md`: global OpenCode instruction file (symlinked to `~/.config/opencode/AGENTS.md` by `setup.sh`).
+- `.opencode/`: OpenCode runtime config, prompts, skills, generated config sources.
+- `.opencode/skills/`: reusable on-demand task knowledge.
 
-## Default Delivery Flow (Non-Trivial Work)
+## Default Delivery Flow
 
-1. `general` explores current code and context as needed.
-2. For small, clear, local, reversible tasks, `general` may implement directly.
-3. For non-trivial, risky, or ambiguous work, `general` explains the plan/assumptions and asks before proceeding.
-4. `general` performs scoped code/docs/config/tests/local validation directly after required confirmation.
-5. If the user explicitly chooses `standard` or `auto`, follow that lane's planning/delegation rules instead.
+1. Read this `AGENTS.md`.
+2. Read only the relevant docs/templates/scripts/config files for the task.
+3. Use `/Users/spider/workspace/_workspace/` for machine-level routing when the task spans folders.
+4. For small, clear, local, reversible tasks, implement directly.
+5. For non-trivial, risky, or ambiguous work, create/describe a plan and ask before proceeding.
+6. Execute scoped local work directly in `general` within safety gates.
+7. Run the smallest relevant validation set.
+8. Save durable cross-workspace plans, validations, reviews, or handoffs in `/Users/spider/workspace/_workspace/outputs/` when useful.
 
-Optional specialist review/security/performance analysis is manual-only and runs only on explicit user request.
-
-Use judgment for trivial tasks and skip unnecessary steps.
-
-## Auto vs Standard
-
-- `standard` always requires user approval before executable work is delegated to `standard-executor`.
-- `auto` may delegate minor, obvious Tier 1 local reversible work directly to `auto-executor` when no user-facing design choice exists.
-- `auto` must display a plan and receive explicit acceptance before delegating non-minor Tier 1 or Tier 2 work.
-- `general` is not required to route normal implementation work to either lane.
+Use judgment for trivial tasks and skip unnecessary ceremony.
 
 ## Stop-And-Confirm Cases
 
@@ -68,9 +66,7 @@ Proceed autonomously only for minor, obvious local reversible scoped work that d
 
 - Prefer repository-local scripts and workspace tooling.
 - `general` may use configured safe read-only/status and validation commands for local work.
-- `standard` and `auto` primaries may use configured read-only/status bash for exploration, including explicit read-only compound status allowlist entries, but do not validate or run state-changing commands.
 - Broad compound, pipe, redirection, command substitution, `xargs`, and `tee` shell forms remain ask-gated unless a specific read-only status pattern is allowlisted in config.
-- `general` or lane executors run the smallest relevant validation set before handoff, within safety gates.
 - Run the smallest relevant verification set before handoff.
 - Avoid destructive commands unless explicitly required and confirmed.
 
@@ -80,6 +76,7 @@ Load skills proactively when the task matches.
 
 | Task type | Skill name |
 |---|---|
+| Creating, rebuilding, renaming, or repairing this machine-level workflow kit | `workflow-kit-bootstrap` |
 | Initializing this workflow in a new or existing repository (bootstrap docs/config alignment) | `repo-bootstrap` |
 
 If a task spans multiple skill areas, load all relevant skills.
@@ -89,8 +86,9 @@ If a task spans multiple skill areas, load all relevant skills.
 Store repository-specific details in these docs:
 
 - `ARCHITECTURE.md`: repository layout, ownership boundaries, key modules, data/control flows.
-- `RUNBOOK.md`: executable setup/dev/build/test/release commands.
+- `docs/`: framework concepts, maintenance notes, migration notes, and kit maintenance commands.
+- `templates/`: reusable project/vault/artifact templates.
+- `scripts/`: initialization and verification tools.
 - `.opencode/skills/`: active skills and loading instructions.
-- `BOOTSTRAP.md`: one-shot bootstrap prompt and initialization checklist.
 
 When architecture, commands, or routing changes, update the corresponding doc.

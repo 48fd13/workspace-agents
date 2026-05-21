@@ -1,14 +1,6 @@
 {
 	"global": "readonly",
 	"agent": {
-		"general": "validation",
-		"standard": "readonly",
-		"standard-executor": "validation",
-		"auto": "readonly",
-		"auto-executor": "validation",
-		"explore": "readonly",
-		"code-reviewer": "readonly",
-		"security-auditor": "readonly",
-		"performance-analyzer": "readonly"
+		"general": "validation"
 	}
 }

@@ -32,128 +32,18 @@
 	"default_agent": "general",
 	"agent": {
 		"general": {
-			"description": "Default primary \u2014 safe standalone Q&A, exploration, planning, local edits, writing, validation, and handoff.",
+			"description": "Default primary \u2014 reads folder workflows/runbooks, performs safe local work, validates, and saves handoffs.",
 			"mode": "primary",
 			"prompt": "{file:agents/general.md}",
 			"permission": {
 				"edit": "allow",
 				"question": "allow",
-				"task": {
-					"*": "deny",
-					"explore": "allow"
-				}
+				"task": "deny"
 			},
 			"tools": {
 				"bash": true,
 				"write": true,
 				"edit": true,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": true
-			}
-		},
-		"standard": {
-			"description": "Standard lane primary \u2014 plans directly, confirms, and delegates executable work to standard-executor.",
-			"mode": "primary",
-			"prompt": "{file:agents/standard/standard.md}",
-			"permission": {
-				"edit": "deny",
-				"question": "allow",
-				"task": {
-					"*": "deny",
-					"explore": "allow",
-					"standard-executor": "allow"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": true
-			}
-		},
-		"standard-executor": {
-			"description": "Standard executor \u2014 performs approved code, docs, config, tests, local operations, and validation work with confirmation-gated commands.",
-			"mode": "subagent",
-			"hidden": true,
-			"prompt": "{file:agents/standard/executor.md}",
-			"permission": {
-				"edit": "allow",
-				"question": "allow",
-				"task": {
-					"*": "deny"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": true,
-				"edit": true,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": false
-			}
-		},
-		"auto": {
-			"description": "Auto lane primary \u2014 plans directly and delegates eligible local reversible work to auto-executor.",
-			"mode": "primary",
-			"prompt": "{file:agents/auto/auto.md}",
-			"permission": {
-				"edit": "deny",
-				"question": "allow",
-				"task": {
-					"*": "deny",
-					"explore": "allow",
-					"auto-executor": "allow"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": true
-			}
-		},
-		"auto-executor": {
-			"description": "Auto executor \u2014 performs eligible Tier 1/2 local reversible code, docs, config, tests, operations, and validation work.",
-			"mode": "subagent",
-			"hidden": true,
-			"prompt": "{file:agents/auto/executor.md}",
-			"permission": {
-				"edit": "allow",
-				"question": "allow",
-				"task": {
-					"*": "deny"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": true,
-				"edit": true,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": false
-			}
-		},
-		"explore": {
-			"description": "Use for fast codebase search and exploration \u2014 finding files by pattern, locating code by keyword, answering structural questions. Use before planning or implementing to orient quickly without consuming heavy context.",
-			"mode": "subagent",
-			"hidden": true,
-			"permission": {
-				"edit": "deny"
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
 				"read": true,
 				"grep": true,
 				"glob": true,
@@ -165,66 +55,6 @@
 		},
 		"build": {
 			"disable": true
-		},
-		"code-reviewer": {
-			"description": "Manual-only code review specialist \u2014 tag explicitly for findings-only review; not part of the default workflow.",
-			"mode": "subagent",
-			"prompt": "{file:agents/code-reviewer.md}",
-			"permission": {
-				"edit": "deny",
-				"task": {
-					"*": "deny"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": false
-			}
-		},
-		"security-auditor": {
-			"description": "Manual-only security audit specialist \u2014 tag explicitly for findings-only security review; not part of the default workflow.",
-			"mode": "subagent",
-			"prompt": "{file:agents/security-auditor.md}",
-			"permission": {
-				"edit": "deny",
-				"task": {
-					"*": "deny"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": false
-			}
-		},
-		"performance-analyzer": {
-			"description": "Manual-only performance analysis specialist \u2014 tag explicitly for findings-only analysis; not part of the default workflow.",
-			"mode": "subagent",
-			"prompt": "{file:agents/performance-analyzer.md}",
-			"permission": {
-				"edit": "deny",
-				"task": {
-					"*": "deny"
-				}
-			},
-			"tools": {
-				"bash": true,
-				"write": false,
-				"edit": false,
-				"read": true,
-				"grep": true,
-				"glob": true,
-				"webfetch": false
-			}
 		}
 	}
 }

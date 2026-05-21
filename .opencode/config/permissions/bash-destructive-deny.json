@@ -12,10 +12,6 @@
 		"permission": "deny"
 	},
 	{
-		"pattern": "rmdir *",
-		"permission": "deny"
-	},
-	{
 		"pattern": "sudo rm*",
 		"permission": "deny"
 	},

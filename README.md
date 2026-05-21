@@ -1,70 +1,50 @@
-# opencode-setup
+# Folder Workflow Kit
 
-A reusable **OpenCode orchestration baseline** you can copy into any repository.
+A reusable **AI folder-workflow kit** you can copy into any repository.
 
-It provides a default safe standalone `general` agent, optional explicit `standard` and `auto` lanes that delegate executable work to lane executors, plus a bootstrap path that generates repo-specific docs.
+It keeps OpenCode as the runtime and permission layer, while moving workflow control into folders, Markdown runbooks, checklists, staged outputs, and skills. The active default is a single `general` agent.
 
 ## What this repo includes
 
-- `.opencode/opencode.json` — agent registry, permissions, and defaults
-- `AGENTS.md` — portable execution policy (workflow, risk gates, done criteria)
-- `ARCHITECTURE.md` — repository map and boundaries (repo-specific)
-- `RUNBOOK.md` — executable command reference (repo-specific)
-- `BOOTSTRAP.md` — one-shot prompt for initializing a copied setup
-- `.opencode/agents/` — primary orchestrators and specialist subagents
-  - primary: `general`, `standard`, `auto`
-  - executors: `standard-executor`, `auto-executor`
-  - read-only helper: `explore`
-  - optional manual specialists: `code-reviewer`, `security-auditor`, `performance-analyzer`
-- `.opencode/skills/` — bundled, loadable skills (`repo-bootstrap`)
+- `.opencode/opencode.json` — single-agent runtime config, permissions, and defaults
+- `AGENTS.md` — portable execution policy, folder workflow rules, risk gates, done criteria
+- `CLAUDE.md` — Claude Code pointer that routes to `AGENTS.md`
+- `docs/` — framework concepts, template selection, kit maintenance, and migration notes
+- `templates/` — bootstrap templates: `minimal`, `work`, `personal`
+- `templates/pipeline/` — strict MWP-style staged pipeline template
+- `docs/artifacts/` — canonical artifact skeletons (copied into workspace templates)
+- `scripts/init-workspace.py` — initialize a directory from a template
+- `scripts/verify-workspace.py` — verify any folder-workflow workspace
+- `.opencode/AGENTS.md` — global OpenCode instruction file linked by `setup.sh`
+- `docs/workflow-kit-bootstrap.md` — cross-tool procedure for creating or repairing the kit/control-plane layer
+- `ARCHITECTURE.md` — repository map and boundaries
+- `.opencode/agents/` — active `general` prompt only
+- `.opencode/skills/` — bundled, loadable skills (`repo-bootstrap`, `workflow-kit-bootstrap`)
 - `.opencode/config/` — source config and permission profiles used to generate `opencode.json`
 - `.opencode/scripts/` — config generation helpers
 
-## Lane model (core workflow)
+## Folder workflow model
 
-Default usage starts with `general`, which can answer, explore, plan, edit/write local files, and validate directly. `standard` and `auto` remain **delegation-first** optional lanes: their primaries plan and converse only, then route execution to executor subagents.
+Default usage starts with `general`, which reads local `AGENTS.md`, uses a local `_workspace/` when present, otherwise reads the relevant docs/templates/scripts/config files, performs scoped local work, validates, and writes durable handoff artifacts when useful.
 
-### `general` default
+There are no default delegation lanes. Former lane/specialist prompts are archived under `archive/retired-agents/`; their useful logic is represented as workflows and checklists.
 
-- Q&A, exploration, planning, local code/docs/config edits, writing, tests, and validation
-- Direct local implementation for normal safe work; for non-trivial/risky/ambiguous work, explain plan/assumptions and ask before proceeding
-- May suggest `standard` or `auto` as optional explicit lanes, but does not require routing for normal work
+Typical flow:
 
-### `standard` lane
-
-- Confirmation-oriented planning
-- Delegates approved code/docs/config/tests/local operations/validation work to `standard-executor`
-- Explicitly confirms plan/approach before implementation for non-trivial tasks
-
-### `auto` lane
-
-- Auto-lane planning
-- Delegates Tier 1/Tier 2 local reversible scoped work to `auto-executor`
-- Uses safe local validation/status commands without asking where configured
-- Stops for shared infra/deploy/publish/push/terraform/cluster mutations and routes to standard confirmation
-
-## Default flow (non-trivial task)
-
-Typical flow is:
-
-1. `general` inspects context directly, optionally using read-only `explore`
-2. `general` produces and displays a risk-tiered plan/assumptions when work is non-trivial, risky, or ambiguous
-3. User accepts the plan when required
-4. `general` performs scoped code/docs/config/tests/local operations/validation work directly
-
-If the user explicitly chooses `standard` or `auto`, that lane's executor (`standard-executor` or `auto-executor`) performs the scoped implementation after the lane's required planning/acceptance.
-
-Docs-writing and local operations responsibilities are merged into executors. Code review, security audit, and performance analysis are not automatic default workflow steps; the optional specialists can be tagged explicitly for manual findings-only review.
+1. Read `AGENTS.md`.
+2. Use root `/Users/spider/workspace/_workspace/` for machine-level routing when needed.
+3. Select the relevant docs, templates, scripts, skills, or config files.
+4. Read only the required runbook/context/skill files.
+5. Produce a plan or proceed directly for small safe work.
+6. Execute within permission and safety gates.
+7. Save cross-workspace outputs under `/Users/spider/workspace/_workspace/outputs/` when useful.
 
 ## Permission and safety model (high level)
 
 - `general` is configured for safe standalone local execution, including write/edit tools and focused validation allowlists.
-- `standard` and `auto` primaries are configured as planning-only: no direct write/edit execution, with automatic bash limited to configured read-only exploration/status patterns and explicit read-only compound status combos.
-- Primary `standard` and `auto` agents assign risk tiers before implementation.
-- `standard` is confirmation-oriented; `auto` may proceed for clear Tier 1/Tier 2 local reversible edits.
-- Validation bash is automatic only for `general` and `auto-executor`; `standard-executor`, planning primaries, and explore do not get automatic test/lint/build/typecheck commands.
-- Optional manual specialists are read-only/findings-only and are not wired into primary default delegation paths.
-- Write/command execution happens in `general` or in explicit lane subagents with scoped permissions, with fallback ask for commands not explicitly allowed or denied.
+- Agent delegation is disabled for the active workflow.
+- Review/security/performance work uses checklist/workflow files in target workspaces, not specialist agents.
+- Write/command execution happens in `general` with fallback ask for commands not explicitly allowed or denied.
 - Broad compound, pipe, redirection, command substitution, `xargs`, and `tee` shell forms remain ask-gated unless a specific harmless read-only status combo is allowlisted before the broad guard.
 - Baseline command guardrails in `.opencode/opencode.json` deny clearly dangerous operations (for example force-reset or recursive destructive deletes).
 - Both lanes enforce stop-and-confirm for high-risk changes such as:
@@ -85,7 +65,7 @@ Docs-writing and local operations responsibilities are merged into executors. Co
 Install this repo's OpenCode config into your user config with symlinks:
 
 ```sh
-cd ~/workspace/agents && ./setup.sh
+cd ~/workspace/workflow-kit && ./setup.sh
 ```
 
 To target a different config directory:
@@ -94,31 +74,54 @@ To target a different config directory:
 OPENCODE_CONFIG_DIR=/path/to/opencode ./setup.sh
 ```
 
-The setup script links only the selected `.opencode` entries (`opencode.json`,
-`agents/`, `skills/`, `config/`, and `scripts/`) and backs up conflicting
+The setup script links the selected `.opencode` entries (`opencode.json`,
+`agents/`, `skills/`, `config/`, and `scripts/`) plus the global OpenCode
+`AGENTS.md` from `.opencode/AGENTS.md`. It backs up conflicting
 destination files or directories before replacing them with symlinks.
+
+Restart OpenCode after running setup.
+
+## Initialize a workspace in another directory
+
+Use a template instead of copying the whole kit manually:
+
+```sh
+python3 scripts/init-workspace.py --template minimal /path/to/project
+python3 scripts/init-workspace.py --template work /path/to/project
+python3 scripts/init-workspace.py --template personal /path/to/vault
+python3 scripts/init-workspace.py --template pipeline /path/to/pipeline-workspace
+```
+
+Templates:
+
+- `minimal`: smallest useful `AGENTS.md` + `_workspace/`
+- `work`: coding/docs/review/validation/handoff workflows
+- `personal`: learning, notes, source processing, and writing polish workflows
+- `pipeline`: strict MWP-style sequential stage pipeline with `CONTEXT.md`, `stages/`, `references/`, and `output/`; it does not include `AGENTS.md` or `CLAUDE.md`
+
+Verify a target workspace:
+
+```sh
+python3 scripts/verify-workspace.py /path/to/project
+```
 
 ## How to use this in another repo
 
-1. Copy these files/folders into the target repo root:
-   - `.opencode/opencode.json`
-   - `AGENTS.md`
-   - `verify-opencode-setup.py`
-   - `.opencode/agents/`
-   - `.opencode/skills/`
-2. Run the prompt in `BOOTSTRAP.md` to generate/update repo-specific docs:
-   - `ARCHITECTURE.md`
-   - `RUNBOOK.md`
-   - `.opencode/skills/` (add/remove skills relevant to the repo)
-3. Keep `AGENTS.md` mostly portable and policy-focused.
-4. Adjust `.opencode/opencode.json`:
-   - keep `default_agent` as `general`; the verifier expects this standalone default, so switch lanes explicitly only when desired
-   - tune permission rules for your environment
-   - keep delegation boundaries intact; `general` executes directly, while `standard`/`auto` delegate to their executors
-5. Reload/restart OpenCode so agent/skill config is re-read.
-6. Run `python3 verify-opencode-setup.py` to confirm setup integrity.
+1. Initialize a template with `scripts/init-workspace.py`.
+2. Optionally copy `.opencode/` if the project should carry its own OpenCode runtime config.
+3. Run the `repo-bootstrap` skill to generate/update repo-specific docs:
+    - `ARCHITECTURE.md`
+    - folder workflows/runbooks/context files relevant to the repo
+    - `.opencode/skills/` (add/remove skills relevant to the repo)
+4. Keep `AGENTS.md` mostly portable and policy-focused.
+5. Adjust `.opencode/opencode.json` if copied:
+    - keep `default_agent` as `general`
+    - tune permission rules for your environment
+    - keep agent delegation disabled unless you intentionally reintroduce it
+6. Reload/restart OpenCode so agent/skill config is re-read.
+7. Run `python3 scripts/verify-workspace.py <target>` to confirm workspace integrity.
 
 ## Notes
 
-- Current default agent in this repo is `general`.
-- The included `repo-bootstrap` skill is intended to reduce manual customization after copy.
+- Current active agent in this repo is `general`.
+- `repo-bootstrap` initializes target repos/folders; `workflow-kit-bootstrap` points OpenCode to the cross-tool kit bootstrap runbook.

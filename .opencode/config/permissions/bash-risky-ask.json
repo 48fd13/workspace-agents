@@ -80,6 +80,10 @@
 		"permission": "ask"
 	},
 	{
+		"pattern": "rmdir *",
+		"permission": "ask"
+	},
+	{
 		"pattern": "mv *",
 		"permission": "ask"
 	},

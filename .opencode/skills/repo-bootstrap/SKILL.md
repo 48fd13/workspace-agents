@@ -1,27 +1,32 @@
+---
+name: repo-bootstrap
+description: Use when initializing, installing, bootstrapping, or aligning the OpenCode/Claude folder-workflow system in a repository.
+---
+
 # repo-bootstrap
 
 Use this skill when the user asks to initialize, install, bootstrap, or align the OpenCode workflow in a repository.
 
 ## Goal
 
-Set up a repository so the workflow is usable immediately with minimal manual customization.
+Set up a repository so the folder-workflow system is usable immediately with minimal manual customization.
 
 ## What to produce
 
 Create or update these files:
 
 - `AGENTS.md` (portable policy only; avoid repo-specific placeholders)
+- `_workspace/` (map, workflows, runbooks, context, outputs)
 - `ARCHITECTURE.md` (repo map, boundaries, key components, ownership)
-- `RUNBOOK.md` (validated setup/dev/lint/test/build/release commands)
 - `.opencode/skills/` (skill folders and routing aligned to this repo)
-- `BOOTSTRAP.md` (one-shot prompt for re-running setup)
 
 Also verify `.opencode/opencode.json`:
 
 - All referenced agent prompt files exist.
-- `default_agent` is standalone `general`; the verifier expects this default, so users should switch lanes explicitly only when desired.
+- `default_agent` is standalone `general`.
+- Agentic lane/executor/specialist routing is disabled unless the user intentionally reintroduces it.
 - Permission guardrails include destructive-operation denies.
-- Required active agents include standalone `general`, optional lane primaries `standard`/`auto`, and lane executors `standard-executor`/`auto-executor`, with `explore` available as a read-only helper.
+- Required active agent is standalone `general`; workflows/checklists replace lane and specialist agents.
 
 ## Execution workflow
 

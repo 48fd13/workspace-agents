@@ -36,6 +36,7 @@ done
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$SCRIPT_DIR"
 SOURCE="$REPO_ROOT/.opencode"
+GLOBAL_AGENTS_SOURCE="$REPO_ROOT/.opencode/AGENTS.md"
 DEST="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
 DEST_PARENT="$(dirname -- "$DEST")"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
@@ -149,6 +150,20 @@ for entry in "${REQUIRED_ENTRIES[@]}"; do
   link_entry "$entry"
 done
 
+if [ -f "$GLOBAL_AGENTS_SOURCE" ]; then
+  if is_correct_symlink "$DEST/AGENTS.md" "$GLOBAL_AGENTS_SOURCE"; then
+    log "Already linked: $DEST/AGENTS.md -> $GLOBAL_AGENTS_SOURCE"
+  else
+    if [ -e "$DEST/AGENTS.md" ] || [ -L "$DEST/AGENTS.md" ]; then
+      backup_entry "$DEST/AGENTS.md" "AGENTS.md"
+    fi
+    log "Linking: $DEST/AGENTS.md -> $GLOBAL_AGENTS_SOURCE"
+    run ln -s "$GLOBAL_AGENTS_SOURCE" "$DEST/AGENTS.md"
+  fi
+else
+  log "Global AGENTS source not found; skipping: $GLOBAL_AGENTS_SOURCE"
+fi
+
 if [ -f "$REPO_ROOT/verify-opencode-setup.py" ]; then
   if [ "$DRY_RUN" -eq 1 ]; then
     log "DRY-RUN: python3 verify-opencode-setup.py"
@@ -169,4 +184,5 @@ Next steps:
   3. Edit permissions under .opencode/config/permissions/ when needed.
   4. Regenerate config after permission edits:
      cd "$REPO_ROOT" && python3 .opencode/scripts/build-config.py
+  5. Global OpenCode instructions are linked from .opencode/AGENTS.md.
 EOF
