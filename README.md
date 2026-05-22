@@ -4,6 +4,12 @@ A reusable **AI folder-workflow kit** you can copy into any repository.
 
 It keeps OpenCode as the runtime and permission layer, while moving workflow control into folders, Markdown runbooks, checklists, staged outputs, and skills. The active default is a single `general` agent.
 
+## Attribution
+
+This kit is inspired by **Model Workspace Protocol (MWP)** from Jake Van Clief and David McDermott: <https://github.com/RinDig/Model-Workspace-Protocol-MWP>.
+
+MWP's core idea is that folder structure, Markdown context files, stage contracts, and plain-text outputs can orchestrate sequential human-reviewed AI workflows without a heavyweight multi-agent framework. This kit adapts that idea for OpenCode/Claude, machine-level routing, reusable templates, and vault/project workflows.
+
 ## What this repo includes
 
 - `.opencode/opencode.json` — single-agent runtime config, permissions, and defaults
